@@ -1,5 +1,46 @@
 {
-  "last_updated": "2026-09-06 18:47:46 UTC+08:00",
-  "open_positions": [],
+  "last_updated": "2026-09-06 18:51:25 UTC+08:00",
+  "open_positions": [
+    {
+      "ticker": "BE",
+      "quantity": 17792,
+      "avg_cost_usd": 210.78,
+      "held_since": "2026-07-24",
+      "current_price_usd": 252.87,
+      "running_pl_usd": 748865.19,
+      "running_pl_pct": 19.97,
+      "data_incomplete": false
+    },
+    {
+      "ticker": "GOOGL",
+      "quantity": 2254,
+      "avg_cost_usd": 332.78,
+      "held_since": "2026-01-16",
+      "current_price_usd": 338.46,
+      "running_pl_usd": 12802.7,
+      "running_pl_pct": 1.71,
+      "data_incomplete": true
+    },
+    {
+      "ticker": "INTC",
+      "quantity": 7483,
+      "avg_cost_usd": 100.23,
+      "held_since": "2026-07-24",
+      "current_price_usd": 95.8,
+      "running_pl_usd": -33149.67,
+      "running_pl_pct": -4.42,
+      "data_incomplete": false
+    },
+    {
+      "ticker": "UBER",
+      "quantity": 10575,
+      "avg_cost_usd": 70.92,
+      "held_since": "2026-05-29",
+      "current_price_usd": 75.76,
+      "running_pl_usd": 51183.02,
+      "running_pl_pct": 6.82,
+      "data_incomplete": false
+    }
+  ],
   "closed_positions": []
 }
