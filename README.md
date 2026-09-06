@@ -65,6 +65,26 @@ Positions missing a price/quantity estimate anywhere in their history are
 flagged `data_incomplete: true` (shown with a `*` in the UI) and may
 understate or omit lots entirely.
 
+## "Reported" date: could you actually have followed this trade?
+
+A retail investor never sees a trade on its `transaction_date` -- only once
+it's disclosed. STOCK Act filings can lag the actual trade by weeks. So
+every stock transaction also carries:
+
+* `notification_date` -- when the trade became public (shown as the
+  **Reported** column; hover it for the tooltip).
+* `est_price_on_report_usd` -- looked-up closing price on that report date.
+* `current_price_usd` -- latest looked-up closing price.
+* `pl_since_report_pct` -- the move between those two, i.e. roughly "if you
+  acted the moment this became public, how would that have gone so far."
+
+This is framed as "how has the stock moved," not a claim about what
+following a Sale specifically would net you (that would require assuming
+you'd short the stock, which this tool doesn't presume) -- the UI shows the
+raw price change either way and lets you judge it in context of the trade
+type. Same caveats as everywhere else here: derived from a looked-up price,
+best-effort, and left blank when a lookup fails rather than guessed.
+
 ## Files
 
 * `track_pelosi.py` — fetches the House Clerk index + PTR PDFs, parses new

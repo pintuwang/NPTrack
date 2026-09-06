@@ -361,6 +361,12 @@ def normalize_transaction(raw_row, member_name, filing_year, filing_url):
         # Best-effort only -- PTRs never disclose exact price or share count.
         "est_price_usd": None,
         "est_quantity": None,
+        # "Reported date" analysis: how the stock has moved from the price
+        # when the trade became public (notification_date) to today -- see
+        # enrich_with_report_date_analysis. Also best-effort.
+        "est_price_on_report_usd": None,
+        "current_price_usd": None,
+        "pl_since_report_pct": None,
     }
 
 
@@ -590,32 +596,86 @@ def compute_positions(all_trades):
     return open_positions, closed_positions
 
 
-def enrich_open_positions(open_positions, max_lookups=25):
+def get_current_price(ticker, price_cache, budget):
+    """Shared helper: look up (and cache, within this run) a ticker's latest
+    price. `budget` is a mutable {"lookups": int, "failures": int} dict so
+    callers can share one rate/failure budget across the whole run."""
+    if ticker in price_cache:
+        return price_cache[ticker]
+    if budget["lookups"] >= budget["max_lookups"] or budget["failures"] >= 5:
+        return None
+
+    price = fetch_latest_close(ticker)
+    price_cache[ticker] = price
+    budget["lookups"] += 1
+    time.sleep(0.5)
+    budget["failures"] = 0 if price else budget["failures"] + 1
+    return price
+
+
+def enrich_open_positions(open_positions, price_cache, budget):
     """Best-effort: fetch a current price for each open ticker so we can
     show a running (unrealized) P/L. Failure just leaves fields null."""
-    lookups_done = 0
-    consecutive_failures = 0
-
     for pos in open_positions:
-        if lookups_done >= max_lookups or consecutive_failures >= 5:
-            break
         if pos["avg_cost_usd"] is None:
             continue
 
-        price = fetch_latest_close(pos["ticker"])
-        lookups_done += 1
-        time.sleep(0.5)
-
+        price = get_current_price(pos["ticker"], price_cache, budget)
         if price:
-            consecutive_failures = 0
             pos["current_price_usd"] = round(price, 2)
             pos["running_pl_usd"] = round((price - pos["avg_cost_usd"]) * pos["quantity"], 2)
             pos["running_pl_pct"] = round((price - pos["avg_cost_usd"]) / pos["avg_cost_usd"] * 100, 2)
-        else:
-            consecutive_failures += 1
 
-    if consecutive_failures >= 5:
+    if budget["failures"] >= 5:
         log_debug("Stopping current-price lookups early after repeated failures")
+
+
+# ---------------------------------------------------------------------------
+# Per-transaction "reported date" analysis: a retail investor can only ever
+# have known about a trade once it was *reported* (notification_date), not
+# on the actual transaction_date -- STOCK Act filings can lag by weeks. This
+# shows how the stock has moved from the price when it was reported to now,
+# as a rough read on whether following the disclosure would still have paid
+# off. Directional framing (does a rising price help or hurt) is left to the
+# UI, since it depends on trade_type (Purchase vs. Sale).
+# ---------------------------------------------------------------------------
+
+def enrich_with_report_date_analysis(transactions, price_cache, budget, report_price_cache=None):
+    """Fill in est_price_on_report_usd / current_price_usd / pl_since_report_pct
+    for every stock transaction with a resolvable ticker and notification
+    date. Best-effort and capped, like the other enrichment passes."""
+    if report_price_cache is None:
+        report_price_cache = {}
+
+    for txn in transactions:
+        if txn["asset_type"] != "Stock" or not txn["ticker"]:
+            continue
+
+        if txn.get("est_price_on_report_usd") is None and txn.get("notification_date"):
+            if budget["lookups"] < budget["max_lookups"] and budget["failures"] < 5:
+                key = (txn["ticker"], txn["notification_date"])
+                if key not in report_price_cache:
+                    report_price_cache[key] = fetch_close_price(txn["ticker"], txn["notification_date"])
+                    budget["lookups"] += 1
+                    time.sleep(0.5)
+                    budget["failures"] = 0 if report_price_cache[key] else budget["failures"] + 1
+                report_price = report_price_cache[key]
+                if report_price:
+                    txn["est_price_on_report_usd"] = round(report_price, 2)
+
+        current_price = get_current_price(txn["ticker"], price_cache, budget)
+        if current_price:
+            txn["current_price_usd"] = round(current_price, 2)
+
+        report_price = txn.get("est_price_on_report_usd")
+        cur_price = txn.get("current_price_usd")
+        if report_price and cur_price:
+            txn["pl_since_report_pct"] = round((cur_price - report_price) / report_price * 100, 2)
+        else:
+            txn["pl_since_report_pct"] = txn.get("pl_since_report_pct")
+
+    if budget["failures"] >= 5:
+        log_debug("Stopping report-date price lookups early after repeated failures")
 
 
 # ---------------------------------------------------------------------------
@@ -690,6 +750,14 @@ def main():
     # earlier run when the price lookup endpoint was failing.
     enrich_with_price_estimates(all_trades)
 
+    # Shared current-price cache/budget across both the per-transaction
+    # "reported date" analysis and the position summary's current prices --
+    # they very often want the same ticker, so this halves the redundant
+    # Yahoo Finance calls within a single run.
+    current_price_cache = {}
+    price_budget = {"lookups": 0, "max_lookups": 60, "failures": 0}
+    enrich_with_report_date_analysis(all_trades, current_price_cache, price_budget)
+
     all_trades.sort(key=lambda t: t.get("transaction_date") or "", reverse=True)
 
     now_utc = datetime.now(timezone.utc)
@@ -703,7 +771,7 @@ def main():
     }
 
     open_positions, closed_positions = compute_positions(all_trades)
-    enrich_open_positions(open_positions)
+    enrich_open_positions(open_positions, current_price_cache, price_budget)
     open_positions.sort(key=lambda p: p["ticker"])
     closed_positions.sort(key=lambda p: p["sell_date"], reverse=True)
 

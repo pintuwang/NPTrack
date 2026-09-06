@@ -30,6 +30,9 @@
             derived by looking up a historical closing price near the trade date &mdash;
             they are estimates, not reported figures. Fields left blank could not be
             determined automatically; use the source filing link to verify.
+            The <strong>Reported</strong> date (hover it) is when the trade became public under
+            the STOCK Act's disclosure deadline &mdash; often weeks after the actual trade &mdash;
+            since that's the earliest point anyone outside Congress could have acted on it.
         </div>
 
         <div id="new-banner" class="hidden bg-blue-50 border border-blue-200 text-blue-800 text-sm rounded-lg p-3 mb-6"></div>
@@ -71,6 +74,7 @@
                 <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
                     <tr>
                         <th class="px-4 py-3 text-left">Date</th>
+                        <th class="px-4 py-3 text-left">Reported</th>
                         <th class="px-4 py-3 text-left">Stock</th>
                         <th class="px-4 py-3 text-left">Type</th>
                         <th class="px-4 py-3 text-left">Owner</th>
@@ -82,7 +86,7 @@
                     </tr>
                 </thead>
                 <tbody id="trades-body" class="divide-y divide-gray-100">
-                    <tr><td colspan="9" class="px-4 py-6 text-center text-gray-500">Loading trades...</td></tr>
+                    <tr><td colspan="10" class="px-4 py-6 text-center text-gray-500">Loading trades...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -176,12 +180,52 @@
             }
         }
 
+        function reportedCell(t) {
+            if (!t.notification_date) return '&mdash;';
+
+            const reportPrice = t.est_price_on_report_usd;
+            const curPrice = t.current_price_usd;
+            const pct = t.pl_since_report_pct;
+
+            let body;
+            if (reportPrice != null && curPrice != null && pct != null) {
+                const type = (t.trade_type || '').toLowerCase();
+                let note;
+                if (type.startsWith('purchase')) {
+                    note = `Buying when this was reported would be ${fmtPct(pct)} today`;
+                } else if (type.startsWith('sale') || type.startsWith('exchange')) {
+                    note = `Stock is ${fmtPct(pct)} vs. when this sale was disclosed`;
+                } else {
+                    note = `Stock is ${fmtPct(pct)} since this was disclosed`;
+                }
+                body = `
+                    <div class="flex justify-between gap-4"><span class="text-gray-300">Price then</span><span>${money(reportPrice)}</span></div>
+                    <div class="flex justify-between gap-4"><span class="text-gray-300">Price now</span><span>${money(curPrice)}</span></div>
+                    <div class="flex justify-between gap-4 font-semibold ${pct >= 0 ? 'text-green-400' : 'text-red-400'}"><span>Change</span><span>${fmtPct(pct)}</span></div>
+                    <div class="mt-1.5 pt-1.5 border-t border-gray-700 text-gray-200">${note}</div>
+                `;
+            } else {
+                body = '<div class="text-gray-300">Price data not available yet</div>';
+            }
+
+            return `
+                <div class="group relative inline-block">
+                    <span class="border-b border-dotted border-gray-400 cursor-help">${t.notification_date}</span>
+                    <div class="hidden group-hover:block absolute z-10 bottom-full left-1/2 -translate-x-1/2 mb-2 w-60 bg-gray-900 text-white text-xs rounded-lg p-3 shadow-lg normal-case">
+                        <div class="font-semibold mb-1.5">Reported ${t.notification_date}</div>
+                        ${body}
+                        <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                    </div>
+                </div>
+            `;
+        }
+
         function renderTrades(trades) {
             const tbody = document.getElementById('trades-body');
             tbody.innerHTML = '';
 
             if (!trades.length) {
-                tbody.innerHTML = '<tr><td colspan="9" class="px-4 py-6 text-center text-gray-500">No trades tracked yet.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="10" class="px-4 py-6 text-center text-gray-500">No trades tracked yet.</td></tr>';
                 return;
             }
 
@@ -191,6 +235,7 @@
                 const stockLabel = t.ticker ? `${escapeHtml(t.ticker)}` : escapeHtml(t.asset_description || 'Unknown');
                 tr.innerHTML = `
                     <td class="px-4 py-3 whitespace-nowrap">${t.transaction_date || '&mdash;'}</td>
+                    <td class="px-4 py-3 whitespace-nowrap">${reportedCell(t)}</td>
                     <td class="px-4 py-3">
                         <div class="font-semibold">${stockLabel}</div>
                         <div class="text-xs text-gray-500">${escapeHtml(t.asset_description || '')}</div>
