@@ -1,6 +1,28 @@
 {
-  "last_updated": "2026-09-06 18:55:55 UTC+08:00",
+  "last_updated": "2026-09-06 19:00:34 UTC+08:00",
   "open_positions": [
+    {
+      "ticker": "AAPL",
+      "quantity": 0,
+      "avg_cost_usd": null,
+      "held_since": null,
+      "current_price_usd": null,
+      "running_pl_usd": null,
+      "running_pl_pct": null,
+      "unattributed_sale_qty": 109867.0,
+      "data_incomplete": true
+    },
+    {
+      "ticker": "AMZN",
+      "quantity": 0,
+      "avg_cost_usd": null,
+      "held_since": null,
+      "current_price_usd": null,
+      "running_pl_usd": null,
+      "running_pl_pct": null,
+      "unattributed_sale_qty": 12923.0,
+      "data_incomplete": true
+    },
     {
       "ticker": "BE",
       "quantity": 17792,
@@ -9,7 +31,19 @@
       "current_price_usd": 252.87,
       "running_pl_usd": 748865.19,
       "running_pl_pct": 19.97,
+      "unattributed_sale_qty": 0.0,
       "data_incomplete": false
+    },
+    {
+      "ticker": "DIS",
+      "quantity": 0,
+      "avg_cost_usd": null,
+      "held_since": null,
+      "current_price_usd": null,
+      "running_pl_usd": null,
+      "running_pl_pct": null,
+      "unattributed_sale_qty": 26272.0,
+      "data_incomplete": true
     },
     {
       "ticker": "GOOGL",
@@ -19,6 +53,7 @@
       "current_price_usd": 338.46,
       "running_pl_usd": 12802.7,
       "running_pl_pct": 1.71,
+      "unattributed_sale_qty": 9568.0,
       "data_incomplete": true
     },
     {
@@ -29,7 +64,30 @@
       "current_price_usd": 95.8,
       "running_pl_usd": -33149.67,
       "running_pl_pct": -4.42,
+      "unattributed_sale_qty": 0.0,
       "data_incomplete": false
+    },
+    {
+      "ticker": "NVDA",
+      "quantity": 0,
+      "avg_cost_usd": null,
+      "held_since": null,
+      "current_price_usd": null,
+      "running_pl_usd": null,
+      "running_pl_pct": null,
+      "unattributed_sale_qty": 15855.0,
+      "data_incomplete": true
+    },
+    {
+      "ticker": "PYPL",
+      "quantity": 0,
+      "avg_cost_usd": null,
+      "held_since": null,
+      "current_price_usd": null,
+      "running_pl_usd": null,
+      "running_pl_pct": null,
+      "unattributed_sale_qty": 6304.0,
+      "data_incomplete": true
     },
     {
       "ticker": "UBER",
@@ -39,6 +97,7 @@
       "current_price_usd": 75.76,
       "running_pl_usd": 51183.02,
       "running_pl_pct": 6.82,
+      "unattributed_sale_qty": 0.0,
       "data_incomplete": false
     }
   ],
