@@ -496,6 +496,7 @@ def compute_positions(all_trades):
         txns_sorted = sorted(txns, key=lambda t: (t["transaction_date"], t.get("doc_id") or ""))
         lots = deque()  # each: {"qty", "price", "date"}
         data_incomplete = False
+        unattributed_sale_qty = 0.0
 
         for t in txns_sorted:
             qty = t.get("est_quantity")
@@ -544,8 +545,13 @@ def compute_positions(all_trades):
                     if lot["qty"] <= 1e-6:
                         lots.popleft()
                 if remaining > 1e-6:
-                    # Sold more than we have a matching purchase lot for
-                    # (e.g. position opened before tracking began).
+                    # Sold more than we have a matching purchase lot for --
+                    # most likely a position she already held before this
+                    # tracker's history begins (PTRs only cover trades made
+                    # after the fact, not pre-existing holdings). We can't
+                    # compute a cost basis or P/L for shares we never saw
+                    # purchased, so surface the gap rather than guessing.
+                    unattributed_sale_qty += remaining
                     data_incomplete = True
 
         if lots:
@@ -561,7 +567,24 @@ def compute_positions(all_trades):
                 "current_price_usd": None,
                 "running_pl_usd": None,
                 "running_pl_pct": None,
+                "unattributed_sale_qty": round(unattributed_sale_qty, 4),
                 "data_incomplete": data_incomplete,
+            })
+        elif unattributed_sale_qty > 1e-6:
+            # Sold shares in this ticker with no purchase lot in our history
+            # at all -- e.g. a long-held position sold this year. No cost
+            # basis, so no P/L is computable; still show the ticker rather
+            # than dropping the sale silently.
+            open_positions.append({
+                "ticker": ticker,
+                "quantity": 0,
+                "avg_cost_usd": None,
+                "held_since": None,
+                "current_price_usd": None,
+                "running_pl_usd": None,
+                "running_pl_pct": None,
+                "unattributed_sale_qty": round(unattributed_sale_qty, 4),
+                "data_incomplete": True,
             })
 
     return open_positions, closed_positions

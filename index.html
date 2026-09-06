@@ -125,34 +125,47 @@
             for (const p of rows) {
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-gray-50';
-                const isOpen = p.status === 'Open';
-                const statusBadge = isOpen
-                    ? '<span class="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">Open</span>'
-                    : '<span class="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">Closed</span>';
+                const isClosed = p.status === 'Closed';
+                const isUnmatched = !isClosed && (p.quantity === 0) && (p.unattributed_sale_qty > 0);
+                const isOpen = !isClosed && !isUnmatched;
 
-                const entryPrice = isOpen ? p.avg_cost_usd : p.buy_price_usd;
-                const exitPrice = isOpen ? p.current_price_usd : p.sell_price_usd;
-                const held = isOpen
-                    ? (p.held_since ? `since ${p.held_since}` : '&mdash;')
-                    : `${p.days_held} day${p.days_held === 1 ? '' : 's'}`;
+                const statusBadge = isClosed
+                    ? '<span class="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">Closed</span>'
+                    : isUnmatched
+                        ? '<span class="px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">Unmatched sale</span>'
+                        : '<span class="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">Open</span>';
+
+                const entryPrice = isClosed ? p.buy_price_usd : (isOpen ? p.avg_cost_usd : null);
+                const exitPrice = isClosed ? p.sell_price_usd : (isOpen ? p.current_price_usd : null);
+                const held = isClosed
+                    ? `${p.days_held} day${p.days_held === 1 ? '' : 's'}`
+                    : (isOpen ? (p.held_since ? `since ${p.held_since}` : '&mdash;') : '&mdash;');
+
+                const unattributedNote = (p.unattributed_sale_qty > 0)
+                    ? `<div class="text-xs text-amber-600">+ ${p.unattributed_sale_qty.toLocaleString('en-US')} sh sold earlier, no purchase on record</div>`
+                    : '';
 
                 const runningCell = isOpen
                     ? (p.running_pl_usd != null
-                        ? `<span class="${pctClass(p.running_pl_usd)}">${money(p.running_pl_usd)} (${fmtPct(p.running_pl_pct)})</span>`
-                        : '&mdash;')
-                    : '&mdash;';
+                        ? `<span class="${pctClass(p.running_pl_usd)}">${money(p.running_pl_usd)} (${fmtPct(p.running_pl_pct)})</span>${unattributedNote}`
+                        : (unattributedNote || '&mdash;'))
+                    : (isUnmatched
+                        ? `<span class="text-amber-600">sold ${p.unattributed_sale_qty.toLocaleString('en-US')} sh, no purchase on record</span>`
+                        : '&mdash;');
 
-                const annualizedCell = !isOpen
+                const annualizedCell = isClosed
                     ? (p.annualized_pl_pct != null
                         ? `<span class="${pctClass(p.annualized_pl_pct)} font-semibold">${fmtPct(p.annualized_pl_pct)}</span>
                            <div class="text-xs text-gray-400">${money(p.realized_pl_usd)} realized over ${p.days_held}d</div>`
                         : '<span class="text-gray-400">n/a (same-day)</span>')
                     : '&mdash;';
 
+                const quantityCell = isUnmatched ? '&mdash;' : (p.quantity != null ? p.quantity.toLocaleString('en-US') : '&mdash;');
+
                 tr.innerHTML = `
-                    <td class="px-4 py-3 font-semibold">${escapeHtml(p.ticker)}${p.data_incomplete ? ' <span class="text-amber-500" title="Some transactions for this ticker were missing price/quantity data">*</span>' : ''}</td>
+                    <td class="px-4 py-3 font-semibold">${escapeHtml(p.ticker)}${p.data_incomplete ? ' <span class="text-amber-500" title="Some transactions for this ticker were missing price/quantity data, or a sale predates this tracker\'s history">*</span>' : ''}</td>
                     <td class="px-4 py-3">${statusBadge}</td>
-                    <td class="px-4 py-3 text-right">${p.quantity != null ? p.quantity.toLocaleString('en-US') : '&mdash;'}</td>
+                    <td class="px-4 py-3 text-right">${quantityCell}</td>
                     <td class="px-4 py-3 text-right whitespace-nowrap">${entryPrice != null ? money(entryPrice) : '&mdash;'}</td>
                     <td class="px-4 py-3 text-right whitespace-nowrap">${exitPrice != null ? money(exitPrice) : '&mdash;'}</td>
                     <td class="px-4 py-3 whitespace-nowrap">${held}</td>

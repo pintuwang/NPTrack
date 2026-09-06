@@ -48,6 +48,12 @@ excluded, since there's no simple daily price series to value them against):
   unrealized `P/L (Running)` vs. today's looked-up closing price.
 * **Closed lots** (a matched buy → sell pair): a `% P/L (Annualized)`,
   computed CAGR-style as `(1 + realized_return) ** (365 / days_held) - 1`.
+* **Unmatched sales**: a sale with no purchase lot anywhere in our tracked
+  history to match it against -- most likely a position she already held
+  *before* this tracker started recording (PTRs only disclose new trades,
+  not pre-existing holdings). There's no cost basis for shares we never saw
+  bought, so no P/L can be computed; the ticker still shows up (quantity 0,
+  `unattributed_sale_qty` set) rather than the sale silently disappearing.
 
 **Read this before trusting the numbers**: this stacks a *third* layer of
 estimation on top of the two already described above (range midpoint →
