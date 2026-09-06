@@ -257,6 +257,23 @@ def parse_ptr_pdf(pdf_bytes, doc_id):
                     for row in table[1:]:
                         row = [(c or "").strip().replace("\n", " ") for c in row]
                         if len(row) <= col["asset"] or not row[col["asset"]]:
+                            # pdfplumber's column-boundary detection can fail
+                            # for a specific row (often right after the
+                            # header, or when a wrapped cell's second line
+                            # lands in another column's band), dumping the
+                            # whole row's text into column 0 with every
+                            # other column empty. When that blob still looks
+                            # like a real transaction (has both a date and a
+                            # dollar amount in it), the row order is usually
+                            # too scrambled to safely re-parse -- but silently
+                            # dropping a real trade is worse than a loud,
+                            # visible gap, so flag it instead of guessing.
+                            blob = row[0] if row else ""
+                            if AMOUNT_RE.search(blob) and DATE_RE.search(blob):
+                                log_debug(
+                                    f"Doc {doc_id}: likely LOSING a real transaction to malformed "
+                                    f"row splitting (column detection failed for this row): {blob!r}"
+                                )
                             continue
                         raw_rows.append({
                             "owner_raw": row[col["owner"]] if "owner" in col and col["owner"] < len(row) else "",
@@ -337,7 +354,7 @@ def parse_mmddyyyy(date_str):
     return None
 
 
-def normalize_transaction(raw_row, member_name, filing_year, filing_url):
+def normalize_transaction(raw_row, member_name, filing_year, filing_url, filing_date=None):
     amount_low, amount_high = parse_amount_range(raw_row.get("amount_raw"))
     est_value = None
     if amount_low is not None and amount_high is not None:
@@ -350,12 +367,21 @@ def normalize_transaction(raw_row, member_name, filing_year, filing_url):
         "doc_id": raw_row.get("doc_id"),
         "filing_year": filing_year,
         "filing_url": filing_url,
+        # When the PTR document was actually submitted to the Clerk -- the
+        # earliest date the trade was public record. This is what "Reported"
+        # means in the UI, NOT notification_date below (see that field).
+        "filing_date": filing_date,
         "owner": raw_row.get("owner_raw") or "Self",
         "asset_description": raw_row.get("asset_raw"),
         "ticker": extract_ticker(raw_row.get("asset_raw")),
         "asset_type": classify_asset_type(raw_row.get("asset_raw")),
         "trade_type": normalize_txn_type(raw_row.get("type_raw")),
         "transaction_date": parse_mmddyyyy(raw_row.get("date_raw")),
+        # Per the House Ethics instruction guide: the date the FILER was
+        # notified of the transaction (e.g. by their broker) -- this starts
+        # the STOCK Act's 30-day filing clock. For a self-executed trade
+        # it's usually the same as transaction_date. It is NOT the date the
+        # trade became public -- that's filing_date above.
         "notification_date": parse_mmddyyyy(raw_row.get("notification_date_raw")),
         "amount_range": (raw_row.get("amount_raw") or "").strip(),
         "amount_range_low": amount_low,
@@ -635,18 +661,21 @@ def enrich_open_positions(open_positions, price_cache, budget):
 
 # ---------------------------------------------------------------------------
 # Per-transaction "reported date" analysis: a retail investor can only ever
-# have known about a trade once it was *reported* (notification_date), not
-# on the actual transaction_date -- STOCK Act filings can lag by weeks. This
-# shows how the stock has moved from the price when it was reported to now,
-# as a rough read on whether following the disclosure would still have paid
-# off. Directional framing (does a rising price help or hurt) is left to the
-# UI, since it depends on trade_type (Purchase vs. Sale).
+# have known about a trade once the PTR document was actually filed
+# (filing_date) -- NOT the trade's notification_date, which is when the
+# FILER was told by their broker and is usually close to the transaction
+# date itself, and NOT the transaction_date either. STOCK Act filings can
+# lag the real trade by weeks. This shows how the stock has moved from the
+# price when it was filed/reported to now, as a rough read on whether
+# following the disclosure would still have paid off. Directional framing
+# (does a rising price help or hurt) is left to the UI, since it depends on
+# trade_type (Purchase vs. Sale).
 # ---------------------------------------------------------------------------
 
 def enrich_with_report_date_analysis(transactions, price_cache, budget, report_price_cache=None):
     """Fill in est_price_on_report_usd / current_price_usd / pl_since_report_pct
-    for every stock transaction with a resolvable ticker and notification
-    date. Best-effort and capped, like the other enrichment passes."""
+    for every stock transaction with a resolvable ticker and filing date.
+    Best-effort and capped, like the other enrichment passes."""
     if report_price_cache is None:
         report_price_cache = {}
 
@@ -654,11 +683,11 @@ def enrich_with_report_date_analysis(transactions, price_cache, budget, report_p
         if txn["asset_type"] != "Stock" or not txn["ticker"]:
             continue
 
-        if txn.get("est_price_on_report_usd") is None and txn.get("notification_date"):
+        if txn.get("est_price_on_report_usd") is None and txn.get("filing_date"):
             if budget["lookups"] < budget["max_lookups"] and budget["failures"] < 5:
-                key = (txn["ticker"], txn["notification_date"])
+                key = (txn["ticker"], txn["filing_date"])
                 if key not in report_price_cache:
-                    report_price_cache[key] = fetch_close_price(txn["ticker"], txn["notification_date"])
+                    report_price_cache[key] = fetch_close_price(txn["ticker"], txn["filing_date"])
                     budget["lookups"] += 1
                     time.sleep(0.5)
                     budget["failures"] = 0 if report_price_cache[key] else budget["failures"] + 1
@@ -701,6 +730,11 @@ def main():
         (t.get("doc_id"), t.get("asset_description"), t.get("transaction_date"), t.get("amount_range"))
         for t in all_trades
     }
+    # A filed PTR PDF is immutable at its doc_id -- once we have at least
+    # one transaction from it, there's no need to keep re-downloading and
+    # re-parsing it every run just because it's still in the current year's
+    # filing index.
+    known_doc_ids = {t.get("doc_id") for t in all_trades if t.get("doc_id")}
 
     new_trades = []
 
@@ -719,6 +753,18 @@ def main():
                 doc_id = field(rec, "DocID", "Doc_ID")
                 if not doc_id:
                     continue
+                filing_date = parse_mmddyyyy(field(rec, "FilingDate"))
+
+                # Backfill filing_date onto already-known transactions from
+                # this doc (added after those were first parsed) even when
+                # we're about to skip re-fetching its PDF below.
+                if filing_date:
+                    for t in all_trades:
+                        if t.get("doc_id") == doc_id and not t.get("filing_date"):
+                            t["filing_date"] = filing_date
+
+                if doc_id in known_doc_ids:
+                    continue
 
                 try:
                     pdf_bytes, filing_url = fetch_ptr_pdf(year, doc_id)
@@ -728,7 +774,7 @@ def main():
 
                 raw_rows = parse_ptr_pdf(pdf_bytes, doc_id)
                 for raw_row in raw_rows:
-                    txn = normalize_transaction(raw_row, member["display_name"], year, filing_url)
+                    txn = normalize_transaction(raw_row, member["display_name"], year, filing_url, filing_date)
                     # PTR PDFs often carry a free-text "Comment/Description"
                     # footnote section right below the transactions table,
                     # which pdfplumber's grid detection can merge in as more

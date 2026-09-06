@@ -30,9 +30,11 @@
             derived by looking up a historical closing price near the trade date &mdash;
             they are estimates, not reported figures. Fields left blank could not be
             determined automatically; use the source filing link to verify.
-            The <strong>Reported</strong> date (hover it) is when the trade became public under
-            the STOCK Act's disclosure deadline &mdash; often weeks after the actual trade &mdash;
-            since that's the earliest point anyone outside Congress could have acted on it.
+            The <strong>Reported</strong> date (hover it) is when the PTR document was actually
+            filed with the Clerk &mdash; the earliest point the trade was public record, often
+            weeks after the trade itself. That's different from the PTR's own "notification date"
+            (shown in the tooltip when it differs), which is just when the filer's broker told
+            <em>them</em> about it &mdash; usually right around the trade date, not a public date at all.
         </div>
 
         <div id="new-banner" class="hidden bg-blue-50 border border-blue-200 text-blue-800 text-sm rounded-lg p-3 mb-6"></div>
@@ -181,7 +183,7 @@
         }
 
         function reportedCell(t) {
-            if (!t.notification_date) return '&mdash;';
+            if (!t.filing_date) return '&mdash;';
 
             const reportPrice = t.est_price_on_report_usd;
             const curPrice = t.current_price_usd;
@@ -208,12 +210,17 @@
                 body = '<div class="text-gray-300">Price data not available yet</div>';
             }
 
+            const notifiedNote = (t.notification_date && t.notification_date !== t.filing_date)
+                ? `<div class="mt-1.5 pt-1.5 border-t border-gray-700 text-gray-400">Filer notified: ${t.notification_date}</div>`
+                : '';
+
             return `
                 <div class="group relative inline-block">
-                    <span class="border-b border-dotted border-gray-400 cursor-help">${t.notification_date}</span>
+                    <span class="border-b border-dotted border-gray-400 cursor-help">${t.filing_date}</span>
                     <div class="hidden group-hover:block absolute z-10 bottom-full left-1/2 -translate-x-1/2 mb-2 w-60 bg-gray-900 text-white text-xs rounded-lg p-3 shadow-lg normal-case">
-                        <div class="font-semibold mb-1.5">Reported ${t.notification_date}</div>
+                        <div class="font-semibold mb-1.5">Filed ${t.filing_date}</div>
                         ${body}
+                        ${notifiedNote}
                         <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
                     </div>
                 </div>

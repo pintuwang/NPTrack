@@ -68,12 +68,22 @@ understate or omit lots entirely.
 ## "Reported" date: could you actually have followed this trade?
 
 A retail investor never sees a trade on its `transaction_date` -- only once
-it's disclosed. STOCK Act filings can lag the actual trade by weeks. So
-every stock transaction also carries:
+the PTR document is actually filed with the Clerk. That filing can lag the
+real trade by weeks. So every transaction also carries:
 
-* `notification_date` -- when the trade became public (shown as the
-  **Reported** column; hover it for the tooltip).
-* `est_price_on_report_usd` -- looked-up closing price on that report date.
+* `filing_date` -- when the PTR document was submitted, from the House
+  Clerk's own filing index (one value per filing, applied to every
+  transaction in it). This is what "Reported" means in the UI, and the
+  earliest point the trade was public record.
+* `notification_date` -- a different field, pulled from inside the PTR PDF
+  itself: the date the *filer* was told about the transaction (e.g. by
+  their broker). Per the House Ethics instruction guide, for a
+  self-executed trade this is usually the same as `transaction_date` --
+  it is **not** a public-disclosure date, and is only shown as secondary
+  context in the tooltip when it differs from `filing_date`. (An earlier
+  version of this feature used `notification_date` as "Reported," which
+  was wrong for exactly this reason.)
+* `est_price_on_report_usd` -- looked-up closing price on `filing_date`.
 * `current_price_usd` -- latest looked-up closing price.
 * `pl_since_report_pct` -- the move between those two, i.e. roughly "if you
   acted the moment this became public, how would that have gone so far."
@@ -84,6 +94,20 @@ you'd short the stock, which this tool doesn't presume) -- the UI shows the
 raw price change either way and lets you judge it in context of the trade
 type. Same caveats as everywhere else here: derived from a looked-up price,
 best-effort, and left blank when a lookup fails rather than guessed.
+
+## Known parser gap: some transactions can be silently lost
+
+pdfplumber's table-cell splitting occasionally fails for a specific row in
+a PTR's transaction table (observed: the row right after the header, and
+rows whose asset/amount text wraps across a column boundary) -- when that
+happens, the whole row's text lands in one cell with every other cell
+empty, and since there's no reliable way to un-scramble the column order
+from a blob like that, the row is dropped rather than guessed at. If the
+dropped blob still looks like a real transaction (a date and a dollar
+amount are both present in it), `track_pelosi.py` logs it as **"likely
+LOSING a real transaction"** in `debug_output.txt` so it's a visible gap,
+not a silent one -- check that log periodically. This is a real, confirmed
+limitation (found via a live run, not hypothetical), not yet fixed.
 
 ## Files
 

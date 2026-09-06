@@ -29,16 +29,6 @@ jobs:
           python track_pelosi.py
           echo "Script execution completed"
 
-      - name: TEMP diagnostic -- re-parse a known PTR PDF for column debugging
-        run: |
-          python -c "
-          import track_pelosi as tp
-          for doc_id in ['20033725', '20034836', '20035143']:
-              pdf_bytes, url = tp.fetch_ptr_pdf(2026, doc_id)
-              tp.parse_ptr_pdf(pdf_bytes, doc_id + '-DIAG')
-          "
-          echo "Diagnostic complete"
-
       - name: Check for changes
         id: check_changes
         run: |
