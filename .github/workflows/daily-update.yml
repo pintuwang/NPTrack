@@ -1,0 +1,79 @@
+name: Daily Pelosi Trade Update
+on:
+  schedule:
+    - cron: '0 12 * * *'  # Daily at 12:00 UTC
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PAT }}
+          fetch-depth: 0  # Fetch full history
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Pelosi trade tracker
+        run: |
+          python track_pelosi.py
+          echo "Script execution completed"
+
+      - name: Check for changes
+        id: check_changes
+        run: |
+          if [ -f "pelosi_trades.json" ] && [ -f "pelosi_updates.json" ] && [ -f "pelosi_positions.json" ]; then
+            echo "files_exist=true" >> $GITHUB_OUTPUT
+            if git diff --quiet pelosi_trades.json pelosi_updates.json pelosi_positions.json 2>/dev/null; then
+              echo "has_changes=false" >> $GITHUB_OUTPUT
+            else
+              echo "has_changes=true" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "files_exist=false" >> $GITHUB_OUTPUT
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Display debug output
+        if: always()
+        run: |
+          if [ -f "debug_output.txt" ]; then
+            echo "=== Debug Output ==="
+            cat debug_output.txt
+          else
+            echo "No debug output file found"
+          fi
+
+      - name: Commit and push changes
+        if: steps.check_changes.outputs.files_exist == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add pelosi_trades.json pelosi_updates.json pelosi_positions.json
+          if [ "${{ steps.check_changes.outputs.has_changes }}" == "true" ]; then
+            git commit -m "Pelosi trade update - $(date +'%Y-%m-%d %H:%M UTC')"
+            git push origin main
+            echo "Changes committed and pushed"
+          else
+            echo "No changes to commit"
+          fi
+
+      - name: Upload debug output as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-output
+          path: debug_output.txt
+          retention-days: 7

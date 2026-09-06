@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nancy Pelosi Stock Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', Arial, sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto p-4 max-w-5xl">
+        <header class="text-center mb-6">
+            <h1 class="text-3xl font-bold">Nancy Pelosi Stock &amp; Option Trade Tracker</h1>
+            <p class="text-gray-500 mt-2">
+                Sourced from Periodic Transaction Reports (PTRs) filed with the
+                <a class="text-blue-600 hover:underline" href="https://disclosures-clerk.house.gov/FinancialDisclosure" target="_blank" rel="noopener">
+                    Clerk of the U.S. House of Representatives
+                </a>
+                under the STOCK Act &mdash; not SEC filings.
+            </p>
+            <p id="last-updated" class="text-sm text-gray-400 mt-1"></p>
+        </header>
+
+        <div class="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-lg p-3 mb-6">
+            <strong>About the numbers:</strong> Congress only discloses transaction value as a
+            <em>range</em> (e.g. "$15,001&ndash;$50,000"), never an exact price or share count.
+            "Est. Value" is the midpoint of that range. "Est. Price" and "Est. Quantity" are
+            derived by looking up a historical closing price near the trade date &mdash;
+            they are estimates, not reported figures. Fields left blank could not be
+            determined automatically; use the source filing link to verify.
+        </div>
+
+        <div id="new-banner" class="hidden bg-blue-50 border border-blue-200 text-blue-800 text-sm rounded-lg p-3 mb-6"></div>
+
+        <h2 class="text-xl font-semibold mb-2">Position Summary</h2>
+        <p class="text-sm text-gray-500 mb-2">
+            Stock positions only (options excluded &mdash; no reliable daily price series here), built by
+            FIFO-matching purchases against sales/exchanges. <strong>P/L (Running)</strong> applies to
+            still-open positions (vs. today's price); <strong>% P/L (Annualized)</strong> applies to
+            closed lots (CAGR-style, using the estimated buy/sell prices). Every number here sits two
+            layers of estimation below the actual disclosed filing &mdash; treat as directional, not exact.
+            Short holding periods can produce extreme-looking annualized figures (a small loss over a
+            few days can annualize to nearly &minus;100%) &mdash; check "Held" and the underlying $ amount
+            before reading too much into the annualized percentage alone.
+        </p>
+        <div class="overflow-x-auto bg-white rounded-lg shadow-md mb-8">
+            <table class="min-w-full text-sm">
+                <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
+                    <tr>
+                        <th class="px-4 py-3 text-left">Stock</th>
+                        <th class="px-4 py-3 text-left">Status</th>
+                        <th class="px-4 py-3 text-right">Quantity</th>
+                        <th class="px-4 py-3 text-right">Entry Price</th>
+                        <th class="px-4 py-3 text-right">Exit / Current Price</th>
+                        <th class="px-4 py-3 text-left">Held</th>
+                        <th class="px-4 py-3 text-right">P/L (Running)</th>
+                        <th class="px-4 py-3 text-right">% P/L (Annualized)</th>
+                    </tr>
+                </thead>
+                <tbody id="positions-body" class="divide-y divide-gray-100">
+                    <tr><td colspan="8" class="px-4 py-6 text-center text-gray-500">Loading positions...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 class="text-xl font-semibold mb-2">All Transactions</h2>
+        <div class="overflow-x-auto bg-white rounded-lg shadow-md">
+            <table class="min-w-full text-sm">
+                <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
+                    <tr>
+                        <th class="px-4 py-3 text-left">Date</th>
+                        <th class="px-4 py-3 text-left">Stock</th>
+                        <th class="px-4 py-3 text-left">Type</th>
+                        <th class="px-4 py-3 text-left">Owner</th>
+                        <th class="px-4 py-3 text-right">Amount Range</th>
+                        <th class="px-4 py-3 text-right">Est. Value</th>
+                        <th class="px-4 py-3 text-right">Est. Price</th>
+                        <th class="px-4 py-3 text-right">Est. Qty</th>
+                        <th class="px-4 py-3 text-left">Filing</th>
+                    </tr>
+                </thead>
+                <tbody id="trades-body" class="divide-y divide-gray-100">
+                    <tr><td colspan="9" class="px-4 py-6 text-center text-gray-500">Loading trades...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const money = (n) => n == null ? '&mdash;' :
+            n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+
+        const typeBadge = (type) => {
+            const t = (type || '').toLowerCase();
+            let cls = 'bg-gray-100 text-gray-700';
+            if (t.startsWith('purchase')) cls = 'bg-green-100 text-green-700';
+            else if (t.startsWith('sale')) cls = 'bg-red-100 text-red-700';
+            else if (t.startsWith('exchange')) cls = 'bg-purple-100 text-purple-700';
+            return `<span class="px-2 py-1 rounded-full text-xs font-medium ${cls}">${type || 'Unknown'}</span>`;
+        };
+
+        const escapeHtml = (s) => (s || '').replace(/[&<>"']/g, (c) => (
+            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+        ));
+
+        const pctClass = (n) => n == null ? 'text-gray-400' : (n >= 0 ? 'text-green-700' : 'text-red-700');
+        const fmtPct = (n) => n == null ? '&mdash;' : `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`;
+
+        function renderPositions(openPositions, closedPositions) {
+            const tbody = document.getElementById('positions-body');
+            tbody.innerHTML = '';
+
+            const rows = [
+                ...openPositions.map(p => ({ ...p, status: 'Open' })),
+                ...closedPositions.map(p => ({ ...p, status: 'Closed' })),
+            ];
+
+            if (!rows.length) {
+                tbody.innerHTML = '<tr><td colspan="8" class="px-4 py-6 text-center text-gray-500">No positions to summarize yet.</td></tr>';
+                return;
+            }
+
+            for (const p of rows) {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50';
+                const isOpen = p.status === 'Open';
+                const statusBadge = isOpen
+                    ? '<span class="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">Open</span>'
+                    : '<span class="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">Closed</span>';
+
+                const entryPrice = isOpen ? p.avg_cost_usd : p.buy_price_usd;
+                const exitPrice = isOpen ? p.current_price_usd : p.sell_price_usd;
+                const held = isOpen
+                    ? (p.held_since ? `since ${p.held_since}` : '&mdash;')
+                    : `${p.days_held} day${p.days_held === 1 ? '' : 's'}`;
+
+                const runningCell = isOpen
+                    ? (p.running_pl_usd != null
+                        ? `<span class="${pctClass(p.running_pl_usd)}">${money(p.running_pl_usd)} (${fmtPct(p.running_pl_pct)})</span>`
+                        : '&mdash;')
+                    : '&mdash;';
+
+                const annualizedCell = !isOpen
+                    ? (p.annualized_pl_pct != null
+                        ? `<span class="${pctClass(p.annualized_pl_pct)} font-semibold">${fmtPct(p.annualized_pl_pct)}</span>
+                           <div class="text-xs text-gray-400">${money(p.realized_pl_usd)} realized over ${p.days_held}d</div>`
+                        : '<span class="text-gray-400">n/a (same-day)</span>')
+                    : '&mdash;';
+
+                tr.innerHTML = `
+                    <td class="px-4 py-3 font-semibold">${escapeHtml(p.ticker)}${p.data_incomplete ? ' <span class="text-amber-500" title="Some transactions for this ticker were missing price/quantity data">*</span>' : ''}</td>
+                    <td class="px-4 py-3">${statusBadge}</td>
+                    <td class="px-4 py-3 text-right">${p.quantity != null ? p.quantity.toLocaleString('en-US') : '&mdash;'}</td>
+                    <td class="px-4 py-3 text-right whitespace-nowrap">${entryPrice != null ? money(entryPrice) : '&mdash;'}</td>
+                    <td class="px-4 py-3 text-right whitespace-nowrap">${exitPrice != null ? money(exitPrice) : '&mdash;'}</td>
+                    <td class="px-4 py-3 whitespace-nowrap">${held}</td>
+                    <td class="px-4 py-3 text-right whitespace-nowrap">${runningCell}</td>
+                    <td class="px-4 py-3 text-right whitespace-nowrap">${annualizedCell}</td>
+                `;
+                tbody.appendChild(tr);
+            }
+        }
+
+        function renderTrades(trades) {
+            const tbody = document.getElementById('trades-body');
+            tbody.innerHTML = '';
+
+            if (!trades.length) {
+                tbody.innerHTML = '<tr><td colspan="9" class="px-4 py-6 text-center text-gray-500">No trades tracked yet.</td></tr>';
+                return;
+            }
+
+            for (const t of trades) {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50';
+                const stockLabel = t.ticker ? `${escapeHtml(t.ticker)}` : escapeHtml(t.asset_description || 'Unknown');
+                tr.innerHTML = `
+                    <td class="px-4 py-3 whitespace-nowrap">${t.transaction_date || '&mdash;'}</td>
+                    <td class="px-4 py-3">
+                        <div class="font-semibold">${stockLabel}</div>
+                        <div class="text-xs text-gray-500">${escapeHtml(t.asset_description || '')}</div>
+                        <div class="text-xs text-gray-400">${t.asset_type || ''}</div>
+                    </td>
+                    <td class="px-4 py-3">${typeBadge(t.trade_type)}</td>
+                    <td class="px-4 py-3">${escapeHtml(t.owner || 'Self')}</td>
+                    <td class="px-4 py-3 text-right whitespace-nowrap">${escapeHtml(t.amount_range || '&mdash;')}</td>
+                    <td class="px-4 py-3 text-right whitespace-nowrap">${money(t.est_value_usd)}</td>
+                    <td class="px-4 py-3 text-right whitespace-nowrap">${t.est_price_usd != null ? money(t.est_price_usd) : '&mdash;'}</td>
+                    <td class="px-4 py-3 text-right whitespace-nowrap">${t.est_quantity != null ? t.est_quantity.toLocaleString('en-US') : '&mdash;'}</td>
+                    <td class="px-4 py-3">
+                        <a href="${t.filing_url || '#'}" class="text-blue-600 hover:underline" target="_blank" rel="noopener">PDF</a>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            }
+        }
+
+        async function loadData() {
+            try {
+                const cacheBuster = `${Date.now()}_${Math.random()}`;
+
+                const [tradesRes, updatesRes, positionsRes] = await Promise.all([
+                    fetch(`pelosi_trades.json?v=${cacheBuster}`, { cache: 'no-cache' }),
+                    fetch(`pelosi_updates.json?v=${cacheBuster}`, { cache: 'no-cache' }),
+                    fetch(`pelosi_positions.json?v=${cacheBuster}`, { cache: 'no-cache' })
+                ]);
+
+                const trades = tradesRes.ok ? await tradesRes.json() : [];
+                renderTrades(trades);
+
+                if (positionsRes.ok) {
+                    const positions = await positionsRes.json();
+                    renderPositions(positions.open_positions || [], positions.closed_positions || []);
+                } else {
+                    document.getElementById('positions-body').innerHTML =
+                        '<tr><td colspan="8" class="px-4 py-6 text-center text-red-500">Error loading position data.</td></tr>';
+                }
+
+                if (updatesRes.ok) {
+                    const updates = await updatesRes.json();
+                    document.getElementById('last-updated').textContent =
+                        updates.last_updated ? `Last checked: ${updates.last_updated}` : '';
+
+                    if (updates.new_trade_count > 0) {
+                        const banner = document.getElementById('new-banner');
+                        banner.classList.remove('hidden');
+                        banner.textContent = `${updates.new_trade_count} new trade(s) found in the latest check.`;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading data:', error);
+                document.getElementById('trades-body').innerHTML =
+                    '<tr><td colspan="9" class="px-4 py-6 text-center text-red-500">Error loading trade data. Please try again later.</td></tr>';
+            }
+        }
+
+        window.onload = loadData;
+    </script>
+</body>
+</html>
