@@ -251,6 +251,9 @@ def parse_ptr_pdf(pdf_bytes, doc_id):
                             col.setdefault("amount", i)
                     if "asset" not in col or "amount" not in col:
                         continue  # not the transactions table on this page
+                    log_debug(f"Doc {doc_id}: table header={header!r} col_map={col!r}")
+                    if table[1:]:
+                        log_debug(f"Doc {doc_id}: first data row raw={table[1]!r}")
                     for row in table[1:]:
                         row = [(c or "").strip().replace("\n", " ") for c in row]
                         if len(row) <= col["asset"] or not row[col["asset"]]:
