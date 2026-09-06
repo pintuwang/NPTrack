@@ -16,7 +16,10 @@
     "amount_range_high": 1000000.0,
     "est_value_usd": 750000.5,
     "est_price_usd": 188.18,
-    "est_quantity": 3986
+    "est_quantity": 3986,
+    "est_price_on_report_usd": 188.18,
+    "current_price_usd": 252.87,
+    "pl_since_report_pct": 34.38
   },
   {
     "member": "Nancy Pelosi",
@@ -35,7 +38,10 @@
     "amount_range_high": 5000000.0,
     "est_value_usd": 3000000.5,
     "est_price_usd": 217.3,
-    "est_quantity": 13806
+    "est_quantity": 13806,
+    "est_price_on_report_usd": 217.3,
+    "current_price_usd": 252.87,
+    "pl_since_report_pct": 16.37
   },
   {
     "member": "Nancy Pelosi",
@@ -54,7 +60,10 @@
     "amount_range_high": 1000000.0,
     "est_value_usd": 750000.5,
     "est_price_usd": 100.23,
-    "est_quantity": 7483
+    "est_quantity": 7483,
+    "est_price_on_report_usd": 100.23,
+    "current_price_usd": 95.8,
+    "pl_since_report_pct": -4.42
   },
   {
     "member": "Nancy Pelosi",
@@ -73,7 +82,10 @@
     "amount_range_high": 1000000.0,
     "est_value_usd": 750000.5,
     "est_price_usd": 70.92,
-    "est_quantity": 10575
+    "est_quantity": 10575,
+    "est_price_on_report_usd": 70.92,
+    "current_price_usd": 75.76,
+    "pl_since_report_pct": 6.82
   },
   {
     "member": "Nancy Pelosi",
@@ -92,7 +104,10 @@
     "amount_range_high": 1000000.0,
     "est_value_usd": 750000.5,
     "est_price_usd": 332.78,
-    "est_quantity": 2254
+    "est_quantity": 2254,
+    "est_price_on_report_usd": 332.78,
+    "current_price_usd": 338.46,
+    "pl_since_report_pct": 1.71
   },
   {
     "member": "Nancy Pelosi",
@@ -111,7 +126,10 @@
     "amount_range_high": 15.0,
     "est_value_usd": 15.0,
     "est_price_usd": 45.0,
-    "est_quantity": 0
+    "est_quantity": 0,
+    "est_price_on_report_usd": 45.0,
+    "current_price_usd": 38.61,
+    "pl_since_report_pct": -14.2
   },
   {
     "member": "Nancy Pelosi",
@@ -130,7 +148,10 @@
     "amount_range_high": 5000000.0,
     "est_value_usd": 3000000.5,
     "est_price_usd": 313.56,
-    "est_quantity": 9568
+    "est_quantity": 9568,
+    "est_price_on_report_usd": 313.56,
+    "current_price_usd": 338.46,
+    "pl_since_report_pct": 7.94
   },
   {
     "member": "Nancy Pelosi",
@@ -149,7 +170,10 @@
     "amount_range_high": 25000000.0,
     "est_value_usd": 15000000.5,
     "est_price_usd": 273.76,
-    "est_quantity": 54793
+    "est_quantity": 54793,
+    "est_price_on_report_usd": 273.76,
+    "current_price_usd": 319.97,
+    "pl_since_report_pct": 16.88
   },
   {
     "member": "Nancy Pelosi",
@@ -168,7 +192,10 @@
     "amount_range_high": 500000.0,
     "est_value_usd": 375000.5,
     "est_price_usd": 59.49,
-    "est_quantity": 6304
+    "est_quantity": 6304,
+    "est_price_on_report_usd": 59.49,
+    "current_price_usd": 54.96,
+    "pl_since_report_pct": -7.61
   },
   {
     "member": "Nancy Pelosi",
@@ -187,7 +214,10 @@
     "amount_range_high": 5000000.0,
     "est_value_usd": 3000000.5,
     "est_price_usd": 114.19,
-    "est_quantity": 26272
+    "est_quantity": 26272,
+    "est_price_on_report_usd": 114.19,
+    "current_price_usd": 105.31,
+    "pl_since_report_pct": -7.78
   },
   {
     "member": "Nancy Pelosi",
@@ -206,7 +236,10 @@
     "amount_range_high": 5000000.0,
     "est_value_usd": 3000000.5,
     "est_price_usd": 232.14,
-    "est_quantity": 12923
+    "est_quantity": 12923,
+    "est_price_on_report_usd": 232.14,
+    "current_price_usd": 258.51,
+    "pl_since_report_pct": 11.36
   },
   {
     "member": "Nancy Pelosi",
@@ -225,7 +258,10 @@
     "amount_range_high": 25000000.0,
     "est_value_usd": 15000000.5,
     "est_price_usd": 272.36,
-    "est_quantity": 55074
+    "est_quantity": 55074,
+    "est_price_on_report_usd": 272.36,
+    "current_price_usd": 319.97,
+    "pl_since_report_pct": 17.48
   },
   {
     "member": "Nancy Pelosi",
@@ -244,6 +280,9 @@
     "amount_range_high": 5000000.0,
     "est_value_usd": 3000000.5,
     "est_price_usd": 189.21,
-    "est_quantity": 15855
+    "est_quantity": 15855,
+    "est_price_on_report_usd": 189.21,
+    "current_price_usd": 230.36,
+    "pl_since_report_pct": 21.75
   }
 ]
