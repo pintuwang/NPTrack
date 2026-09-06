@@ -19,7 +19,8 @@
     "est_quantity": 3986,
     "est_price_on_report_usd": 188.18,
     "current_price_usd": 252.87,
-    "pl_since_report_pct": 34.38
+    "pl_since_report_pct": 34.38,
+    "filing_date": "2026-08-21"
   },
   {
     "member": "Nancy Pelosi",
@@ -41,7 +42,8 @@
     "est_quantity": 13806,
     "est_price_on_report_usd": 217.3,
     "current_price_usd": 252.87,
-    "pl_since_report_pct": 16.37
+    "pl_since_report_pct": 16.37,
+    "filing_date": "2026-08-21"
   },
   {
     "member": "Nancy Pelosi",
@@ -63,7 +65,8 @@
     "est_quantity": 7483,
     "est_price_on_report_usd": 100.23,
     "current_price_usd": 95.8,
-    "pl_since_report_pct": -4.42
+    "pl_since_report_pct": -4.42,
+    "filing_date": "2026-08-21"
   },
   {
     "member": "Nancy Pelosi",
@@ -85,7 +88,8 @@
     "est_quantity": 10575,
     "est_price_on_report_usd": 70.92,
     "current_price_usd": 75.76,
-    "pl_since_report_pct": 6.82
+    "pl_since_report_pct": 6.82,
+    "filing_date": "2026-06-23"
   },
   {
     "member": "Nancy Pelosi",
@@ -107,7 +111,8 @@
     "est_quantity": 2254,
     "est_price_on_report_usd": 332.78,
     "current_price_usd": 338.46,
-    "pl_since_report_pct": 1.71
+    "pl_since_report_pct": 1.71,
+    "filing_date": "2026-01-23"
   },
   {
     "member": "Nancy Pelosi",
@@ -129,7 +134,8 @@
     "est_quantity": 0,
     "est_price_on_report_usd": 45.0,
     "current_price_usd": 38.61,
-    "pl_since_report_pct": -14.2
+    "pl_since_report_pct": -14.2,
+    "filing_date": "2026-01-23"
   },
   {
     "member": "Nancy Pelosi",
@@ -151,7 +157,8 @@
     "est_quantity": 9568,
     "est_price_on_report_usd": 313.56,
     "current_price_usd": 338.46,
-    "pl_since_report_pct": 7.94
+    "pl_since_report_pct": 7.94,
+    "filing_date": "2026-01-23"
   },
   {
     "member": "Nancy Pelosi",
@@ -173,7 +180,8 @@
     "est_quantity": 54793,
     "est_price_on_report_usd": 273.76,
     "current_price_usd": 319.97,
-    "pl_since_report_pct": 16.88
+    "pl_since_report_pct": 16.88,
+    "filing_date": "2026-01-23"
   },
   {
     "member": "Nancy Pelosi",
@@ -195,7 +203,8 @@
     "est_quantity": 6304,
     "est_price_on_report_usd": 59.49,
     "current_price_usd": 54.96,
-    "pl_since_report_pct": -7.61
+    "pl_since_report_pct": -7.61,
+    "filing_date": "2026-01-23"
   },
   {
     "member": "Nancy Pelosi",
@@ -217,7 +226,8 @@
     "est_quantity": 26272,
     "est_price_on_report_usd": 114.19,
     "current_price_usd": 105.31,
-    "pl_since_report_pct": -7.78
+    "pl_since_report_pct": -7.78,
+    "filing_date": "2026-01-23"
   },
   {
     "member": "Nancy Pelosi",
@@ -239,7 +249,8 @@
     "est_quantity": 12923,
     "est_price_on_report_usd": 232.14,
     "current_price_usd": 258.51,
-    "pl_since_report_pct": 11.36
+    "pl_since_report_pct": 11.36,
+    "filing_date": "2026-01-23"
   },
   {
     "member": "Nancy Pelosi",
@@ -261,7 +272,8 @@
     "est_quantity": 55074,
     "est_price_on_report_usd": 272.36,
     "current_price_usd": 319.97,
-    "pl_since_report_pct": 17.48
+    "pl_since_report_pct": 17.48,
+    "filing_date": "2026-01-23"
   },
   {
     "member": "Nancy Pelosi",
@@ -283,6 +295,7 @@
     "est_quantity": 15855,
     "est_price_on_report_usd": 189.21,
     "current_price_usd": 230.36,
-    "pl_since_report_pct": 21.75
+    "pl_since_report_pct": 21.75,
+    "filing_date": "2026-01-23"
   }
 ]
