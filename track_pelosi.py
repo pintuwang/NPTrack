@@ -315,6 +315,12 @@ def parse_amount_range(amount_raw):
     nums = re.findall(r"[\d,]+(?:\.\d{2})?", amount_raw)
     if len(nums) >= 2:
         return float(nums[0].replace(",", "")), float(nums[1].replace(",", ""))
+    if len(nums) == 1:
+        # Not a bracketed range -- an exact disclosed amount (e.g. a small
+        # cash-in-lieu payment from a spinoff). Treat as low == high so
+        # est_value_usd comes out exact instead of silently null.
+        exact = float(nums[0].replace(",", ""))
+        return exact, exact
     return None, None
 
 
@@ -637,6 +643,15 @@ def main():
                 raw_rows = parse_ptr_pdf(pdf_bytes, doc_id)
                 for raw_row in raw_rows:
                     txn = normalize_transaction(raw_row, member["display_name"], year, filing_url)
+                    # PTR PDFs often carry a free-text "Comment/Description"
+                    # footnote section right below the transactions table,
+                    # which pdfplumber's grid detection can merge in as more
+                    # rows of the same table. A real transaction row always
+                    # has both a parsed date and a disclosed amount; anything
+                    # missing either is that footnote noise, not a trade.
+                    if not txn["transaction_date"] or not txn["amount_range"]:
+                        log_debug(f"Dropping non-transaction row for doc {doc_id}: {txn['asset_description']!r}")
+                        continue
                     key = (txn["doc_id"], txn["asset_description"], txn["transaction_date"], txn["amount_range"])
                     if key in known_txn_keys:
                         continue
