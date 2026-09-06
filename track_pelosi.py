@@ -363,8 +363,14 @@ def fetch_close_price(ticker, on_date_iso):
     try:
         resp = requests.get(url, headers=REQUEST_HEADERS, timeout=10)
         resp.raise_for_status()
-        lines = [l for l in resp.text.strip().splitlines() if l.strip()]
+        body = resp.text.strip()
+        lines = [l for l in body.splitlines() if l.strip()]
         if len(lines) < 2 or not lines[0].lower().startswith("date"):
+            log_debug(
+                f"Price lookup for {ticker} near {on_date_iso}: unexpected response "
+                f"(status={resp.status_code}, content-type={resp.headers.get('Content-Type')}, "
+                f"first 200 chars={body[:200]!r})"
+            )
             return None
         # Use the last row on/before the target date; else the first available.
         rows = [l.split(",") for l in lines[1:]]
@@ -377,6 +383,7 @@ def fetch_close_price(ticker, on_date_iso):
                 best = r
         chosen = best or (rows[0] if rows else None)
         if not chosen:
+            log_debug(f"Price lookup for {ticker} near {on_date_iso}: no usable rows in response")
             return None
         return float(chosen[4])  # Close
     except Exception as e:
@@ -397,6 +404,8 @@ def enrich_with_price_estimates(transactions, max_lookups=40):
             break
         if txn["asset_type"] != "Stock":
             continue
+        if txn.get("est_price_usd") is not None:
+            continue  # already resolved in an earlier run
         if not txn["ticker"] or not txn["transaction_date"] or txn["est_value_usd"] is None:
             continue
 
@@ -607,10 +616,13 @@ def main():
 
                 time.sleep(1)  # be polite to the House Clerk server
 
-    if new_trades:
-        enrich_with_price_estimates(new_trades)
-
     all_trades.extend(new_trades)
+
+    # Enrich every stock trade still missing a price estimate, not just
+    # this run's new ones -- covers backfilling trades saved during an
+    # earlier run when the price lookup endpoint was failing.
+    enrich_with_price_estimates(all_trades)
+
     all_trades.sort(key=lambda t: t.get("transaction_date") or "", reverse=True)
 
     now_utc = datetime.now(timezone.utc)
