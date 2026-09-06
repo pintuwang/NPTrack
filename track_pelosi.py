@@ -50,9 +50,23 @@ REQUEST_HEADERS = {
                   "+https://github.com/pintuwang/NPTrack)"
 }
 
-# Stooq's free, keyless daily-close CSV endpoint, used only as a best-effort
-# enrichment to estimate price/quantity. Never blocks core functionality.
-STOOQ_URL_TMPL = "https://stooq.com/q/d/l/?s={symbol}.us&d1={d1}&d2={d2}&i=d"
+# Yahoo Finance's unauthenticated chart JSON endpoint, used only as a
+# best-effort enrichment to estimate price/quantity. Never blocks core
+# functionality. (Stooq's CSV endpoint was tried first but serves a
+# JavaScript bot-verification challenge page to non-browser requests --
+# a plain HTTP client can never pass that, so it was replaced outright.)
+YAHOO_CHART_URL_TMPL = (
+    "https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
+    "?period1={period1}&period2={period2}&interval=1d"
+)
+# A generic browser UA for this specific host -- unlike the House Clerk
+# requests above, self-identifying as a bot here is more likely to trigger
+# exactly the kind of anti-bot challenge that broke the Stooq lookup.
+YAHOO_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                  "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept": "application/json",
+}
 
 TICKER_RE = re.compile(r"\(([A-Z]{1,6}(?:\.[A-Z]{1,2})?)\)")
 TICKER_DENYLIST = {"ST", "OP", "PTR", "MF", "CT", "OT", "PL", "REP"}
@@ -349,43 +363,58 @@ def normalize_transaction(raw_row, member_name, filing_year, filing_url):
 # ---------------------------------------------------------------------------
 
 def fetch_close_price(ticker, on_date_iso):
-    """Look up a closing price near on_date_iso via Stooq's free CSV
-    endpoint. Returns None on any failure -- this is pure enrichment."""
+    """Look up a closing price near on_date_iso via Yahoo Finance's
+    unauthenticated chart JSON endpoint. Returns None on any failure --
+    this is pure enrichment, never allowed to block the pipeline."""
     try:
-        target = datetime.strptime(on_date_iso, "%Y-%m-%d")
+        target = datetime.strptime(on_date_iso, "%Y-%m-%d").replace(tzinfo=timezone.utc)
     except (TypeError, ValueError):
         return None
 
-    d1 = (target - timedelta(days=7)).strftime("%Y%m%d")
-    d2 = (target + timedelta(days=1)).strftime("%Y%m%d")
-    url = STOOQ_URL_TMPL.format(symbol=ticker.lower(), d1=d1, d2=d2)
+    period1 = int((target - timedelta(days=10)).timestamp())
+    period2 = int((target + timedelta(days=1)).timestamp())
+    url = YAHOO_CHART_URL_TMPL.format(symbol=ticker.upper(), period1=period1, period2=period2)
 
     try:
-        resp = requests.get(url, headers=REQUEST_HEADERS, timeout=10)
-        resp.raise_for_status()
-        body = resp.text.strip()
-        lines = [l for l in body.splitlines() if l.strip()]
-        if len(lines) < 2 or not lines[0].lower().startswith("date"):
+        resp = requests.get(url, headers=YAHOO_HEADERS, timeout=10)
+        content_type = resp.headers.get("Content-Type", "")
+        if resp.status_code != 200 or "json" not in content_type.lower():
             log_debug(
                 f"Price lookup for {ticker} near {on_date_iso}: unexpected response "
-                f"(status={resp.status_code}, content-type={resp.headers.get('Content-Type')}, "
-                f"first 200 chars={body[:200]!r})"
+                f"(status={resp.status_code}, content-type={content_type}, "
+                f"first 200 chars={resp.text[:200]!r})"
             )
             return None
-        # Use the last row on/before the target date; else the first available.
-        rows = [l.split(",") for l in lines[1:]]
-        best = None
-        for r in rows:
-            if len(r) < 5:
-                continue
-            row_date = datetime.strptime(r[0], "%Y-%m-%d")
-            if row_date <= target:
-                best = r
-        chosen = best or (rows[0] if rows else None)
-        if not chosen:
-            log_debug(f"Price lookup for {ticker} near {on_date_iso}: no usable rows in response")
+
+        data = resp.json()
+        results = ((data or {}).get("chart") or {}).get("result") or []
+        if not results:
+            chart_error = ((data or {}).get("chart") or {}).get("error")
+            log_debug(f"Price lookup for {ticker} near {on_date_iso}: no chart result (error={chart_error})")
             return None
-        return float(chosen[4])  # Close
+
+        timestamps = results[0].get("timestamp") or []
+        quote = ((results[0].get("indicators") or {}).get("quote") or [{}])[0]
+        closes = quote.get("close") or []
+        if not timestamps or not closes:
+            log_debug(f"Price lookup for {ticker} near {on_date_iso}: empty timestamp/close series")
+            return None
+
+        # Latest close on/before the target date; else earliest available.
+        best_price, best_date = None, None
+        for ts, close in zip(timestamps, closes):
+            if close is None:
+                continue
+            row_date = datetime.fromtimestamp(ts, tz=timezone.utc)
+            if row_date <= target and (best_date is None or row_date > best_date):
+                best_date, best_price = row_date, close
+        if best_price is None:
+            best_price = next((c for c in closes if c is not None), None)
+
+        if best_price is None:
+            log_debug(f"Price lookup for {ticker} near {on_date_iso}: no non-null close in series")
+            return None
+        return float(best_price)
     except Exception as e:
         log_debug(f"Price lookup failed for {ticker} near {on_date_iso}: {e}")
         return None

@@ -24,10 +24,14 @@ each one.
 * `est_value_usd` is simply the midpoint of that disclosed range.
 * `est_price_usd` / `est_quantity` are a **derived best-effort estimate**:
   a historical closing price near the transaction date is looked up (via
-  Stooq's free CSV endpoint) and used to back into an estimated share count
-  (`est_value_usd / est_price_usd`). This lookup only runs for plain stock
-  trades with a resolvable ticker, is capped per run, and fails silently
-  (leaving the fields `null`) rather than guessing.
+  Yahoo Finance's unauthenticated chart JSON endpoint) and used to back into
+  an estimated share count (`est_value_usd / est_price_usd`). This lookup
+  only runs for plain stock trades with a resolvable ticker, is capped per
+  run, and fails silently (leaving the fields `null`) rather than guessing.
+  (An earlier version used Stooq's CSV endpoint, but it serves a
+  JavaScript bot-verification page to non-browser requests, which a
+  server-side script can never pass -- confirmed via a live run's debug
+  log, not assumed.)
 * Options transactions are flagged with `asset_type: "Stock Option"` but do
   not get a price/quantity estimate, since option pricing isn't available
   from a simple daily-close feed.
