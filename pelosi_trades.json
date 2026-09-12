@@ -18,8 +18,8 @@
     "est_price_usd": 188.18,
     "est_quantity": 3986,
     "est_price_on_report_usd": 202.48,
-    "current_price_usd": 258.49,
-    "pl_since_report_pct": 27.66,
+    "current_price_usd": 275.75,
+    "pl_since_report_pct": 36.19,
     "filing_date": "2026-08-21"
   },
   {
@@ -41,8 +41,8 @@
     "est_price_usd": 217.3,
     "est_quantity": 13806,
     "est_price_on_report_usd": 202.48,
-    "current_price_usd": 258.49,
-    "pl_since_report_pct": 27.66,
+    "current_price_usd": 275.75,
+    "pl_since_report_pct": 36.19,
     "filing_date": "2026-08-21"
   },
   {
@@ -64,8 +64,8 @@
     "est_price_usd": 100.23,
     "est_quantity": 7483,
     "est_price_on_report_usd": 92.13,
-    "current_price_usd": 100.32,
-    "pl_since_report_pct": 8.89,
+    "current_price_usd": 102.94,
+    "pl_since_report_pct": 11.73,
     "filing_date": "2026-08-21"
   },
   {
@@ -87,8 +87,8 @@
     "est_price_usd": 70.92,
     "est_quantity": 10575,
     "est_price_on_report_usd": 71.43,
-    "current_price_usd": 72.56,
-    "pl_since_report_pct": 1.58,
+    "current_price_usd": 71.67,
+    "pl_since_report_pct": 0.34,
     "filing_date": "2026-06-23"
   },
   {
@@ -110,8 +110,8 @@
     "est_price_usd": 332.78,
     "est_quantity": 2254,
     "est_price_on_report_usd": 330.54,
-    "current_price_usd": 332.6,
-    "pl_since_report_pct": 0.62,
+    "current_price_usd": 338.5,
+    "pl_since_report_pct": 2.41,
     "filing_date": "2026-01-23"
   },
   {
@@ -133,8 +133,8 @@
     "est_price_usd": 45.0,
     "est_quantity": 0,
     "est_price_on_report_usd": 31.38,
-    "current_price_usd": 37.36,
-    "pl_since_report_pct": 19.06,
+    "current_price_usd": 37.19,
+    "pl_since_report_pct": 18.51,
     "filing_date": "2026-01-23"
   },
   {
@@ -156,8 +156,8 @@
     "est_price_usd": 313.56,
     "est_quantity": 9568,
     "est_price_on_report_usd": 330.54,
-    "current_price_usd": 332.6,
-    "pl_since_report_pct": 0.62,
+    "current_price_usd": 338.5,
+    "pl_since_report_pct": 2.41,
     "filing_date": "2026-01-23"
   },
   {
@@ -179,8 +179,8 @@
     "est_price_usd": 273.76,
     "est_quantity": 54793,
     "est_price_on_report_usd": 248.35,
-    "current_price_usd": 326.57,
-    "pl_since_report_pct": 31.5,
+    "current_price_usd": 332.27,
+    "pl_since_report_pct": 33.79,
     "filing_date": "2026-01-23"
   },
   {
@@ -202,8 +202,8 @@
     "est_price_usd": 59.49,
     "est_quantity": 6304,
     "est_price_on_report_usd": 57.15,
-    "current_price_usd": 53.31,
-    "pl_since_report_pct": -6.72,
+    "current_price_usd": 53.72,
+    "pl_since_report_pct": -6.0,
     "filing_date": "2026-01-23"
   },
   {
@@ -225,8 +225,8 @@
     "est_price_usd": 114.19,
     "est_quantity": 26272,
     "est_price_on_report_usd": 113.21,
-    "current_price_usd": 105.82,
-    "pl_since_report_pct": -6.53,
+    "current_price_usd": 106.55,
+    "pl_since_report_pct": -5.88,
     "filing_date": "2026-01-23"
   },
   {
@@ -248,8 +248,8 @@
     "est_price_usd": 232.14,
     "est_quantity": 12923,
     "est_price_on_report_usd": 234.34,
-    "current_price_usd": 251.89,
-    "pl_since_report_pct": 7.49,
+    "current_price_usd": 256.78,
+    "pl_since_report_pct": 9.58,
     "filing_date": "2026-01-23"
   },
   {
@@ -271,8 +271,8 @@
     "est_price_usd": 272.36,
     "est_quantity": 55074,
     "est_price_on_report_usd": 248.35,
-    "current_price_usd": 326.57,
-    "pl_since_report_pct": 31.5,
+    "current_price_usd": 332.27,
+    "pl_since_report_pct": 33.79,
     "filing_date": "2026-01-23"
   },
   {
@@ -294,8 +294,8 @@
     "est_price_usd": 189.21,
     "est_quantity": 15855,
     "est_price_on_report_usd": 184.84,
-    "current_price_usd": 218.36,
-    "pl_since_report_pct": 18.13,
+    "current_price_usd": 218.29,
+    "pl_since_report_pct": 18.1,
     "filing_date": "2026-01-23"
   }
 ]
