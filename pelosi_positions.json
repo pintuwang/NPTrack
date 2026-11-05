@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-11-05 03:13:48 UTC+08:00",
+  "last_updated": "2026-11-06 03:20:30 UTC+08:00",
   "open_positions": [
     {
       "ticker": "AAPL",
@@ -28,9 +28,9 @@
       "quantity": 17792,
       "avg_cost_usd": 210.78,
       "held_since": "2026-07-24",
-      "current_price_usd": 214.01,
-      "running_pl_usd": 57468.06,
-      "running_pl_pct": 1.53,
+      "current_price_usd": 200.4,
+      "running_pl_usd": -184681.07,
+      "running_pl_pct": -4.92,
       "unattributed_sale_qty": 0.0,
       "data_incomplete": false
     },
@@ -50,9 +50,9 @@
       "quantity": 2254,
       "avg_cost_usd": 332.78,
       "held_since": "2026-01-16",
-      "current_price_usd": 280.03,
-      "running_pl_usd": -118898.5,
-      "running_pl_pct": -15.85,
+      "current_price_usd": 288.93,
+      "running_pl_usd": -98837.92,
+      "running_pl_pct": -13.18,
       "unattributed_sale_qty": 9568.0,
       "data_incomplete": true
     },
@@ -61,9 +61,9 @@
       "quantity": 7483,
       "avg_cost_usd": 100.23,
       "held_since": "2026-07-24",
-      "current_price_usd": 60.55,
-      "running_pl_usd": -296925.45,
-      "running_pl_pct": -39.59,
+      "current_price_usd": 58.27,
+      "running_pl_usd": -313986.68,
+      "running_pl_pct": -41.86,
       "unattributed_sale_qty": 0.0,
       "data_incomplete": false
     },
@@ -94,9 +94,9 @@
       "quantity": 10575,
       "avg_cost_usd": 70.92,
       "held_since": "2026-05-29",
-      "current_price_usd": 66.6,
-      "running_pl_usd": -45684.02,
-      "running_pl_pct": -6.09,
+      "current_price_usd": 69.87,
+      "running_pl_usd": -11103.72,
+      "running_pl_pct": -1.48,
       "unattributed_sale_qty": 0.0,
       "data_incomplete": false
     }
